@@ -1,0 +1,33 @@
+from datetime import datetime
+from telegram_bot.config import database_url
+from sqlalchemy import func, Integer
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, declared_attr
+from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+
+DATABASE_URL = database_url
+# Создание асинхронного движка для подключения к БД
+engine = create_async_engine(url=DATABASE_URL)
+
+# Создание фабрики сессий
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+
+
+# Базовый класс для моделей
+class Base(AsyncAttrs, DeclarativeBase):
+    __abstract__ = True  # Этот класс не будет создавать отдельную таблицу
+
+    # Общее поле "id" для всех таблиц
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    # Поля времени создания и обновления записи
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+    # Автоматическое определение имени таблицы
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        return cls.__name__.lower() + 's'
+
+    # Метод для преобразования объекта в словарь
+    def to_dict(self) -> dict:
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
