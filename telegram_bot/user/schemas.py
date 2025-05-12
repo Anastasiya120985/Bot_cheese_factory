@@ -20,6 +20,15 @@ class ProductCategoryIDModel(BaseModel):
     category_id: int
 
 
+class CartIDUserProduct(BaseModel):
+    user_id: int = Field(..., description="ID пользователя Telegram")
+    product_id: int = Field(..., description="ID товара")
+
+
+class CartIDUser(BaseModel):
+    user_id: int = Field(..., description="ID пользователя Telegram")
+
+
 class PurchaseData(BaseModel):
     user_id: int = Field(..., description="ID пользователя Telegram")
     product_id: int = Field(..., description="ID товара")
@@ -30,4 +39,8 @@ class PurchaseData(BaseModel):
 class CartData(BaseModel):
     user_id: int = Field(..., description="ID пользователя Telegram")
     product_id: int = Field(..., description="ID товара")
+    quantity: int = Field(..., description="Количество товара")
+
+
+class CartQuantity(BaseModel):
     quantity: int = Field(..., description="Количество товара")

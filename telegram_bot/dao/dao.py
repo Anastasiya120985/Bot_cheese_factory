@@ -66,7 +66,7 @@ class UserDAO(BaseDAO[User]):
     @classmethod
     async def get_statistics(cls, session: AsyncSession):
         try:
-            now = datetime.now(UTC)
+            now = datetime.now()
 
             query = select(
                 func.count().label('total_users'),

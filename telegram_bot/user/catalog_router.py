@@ -3,9 +3,9 @@ from aiogram.types import Message, CallbackQuery
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram_bot.config import bot, settings
-from telegram_bot.dao.dao import CategoryDao, ProductDao, PurchaseDao, CartDao
+from telegram_bot.dao.dao import CategoryDao, ProductDao, PurchaseDao, CartDao, UserDAO
 from telegram_bot.user.kbs import catalog_kb, product_kb, purchases_kb, cart_product_kb, cart_kb
-from telegram_bot.user.schemas import ProductCategoryIDModel, PurchaseData, CartData
+from telegram_bot.user.schemas import ProductCategoryIDModel, PurchaseData, CartData, CartIDUser, TelegramIDModel, CartIDUserProduct, CartQuantity
 
 catalog_router = Router()
 
@@ -67,60 +67,71 @@ async def page_products(call: CallbackQuery, session_without_commit: AsyncSessio
 
 
 @catalog_router.callback_query(F.data.startswith("add_") | F.data.startswith("remove_"))
-async def update_cart_handler(call: CallbackQuery, session_without_commit: AsyncSession):
+async def update_cart_handler(call: CallbackQuery, session_without_commit: AsyncSession, session_with_commit: AsyncSession):
     action, product_id = call.data.split("_")
     product_id = int(product_id)
-    user_id = int(call.from_user.id)
-    carts = await CartDao.find_all(session=session_without_commit, filters=CartData(product_id=product_id, user_id=user_id))
-    quantity = len(carts)
+    user = await UserDAO.find_one_or_none(
+        session=session_without_commit,
+        filters=TelegramIDModel(telegram_id=call.from_user.id)
+    )
+    user_id = user.id
+    carts = await CartDao.find_one_or_none(
+        session=session_without_commit,
+        filters=CartIDUserProduct(product_id=product_id, user_id=user_id)
+    )
+    if not carts:
+        quantity = 0
+    else:
+        quantity = carts.quantity
     if action == "add":
         quantity += 1
-        if quantity > 1:
-            await CartDao.update(
-                session=session_without_commit,
-                filters=CartData(product_id=product_id, user_id=user_id),
-                values=CartData(quantity=quantity)
-            )
-            await call.answer("🔄 Информация о товаре обновлена!")
-            await call.message.edit_text()
-        else:
-            cart_data = {
-                'user_id': user_id,
-                'product_id': product_id,
-                'quantity': quantity
-            }
+        cart_data = {
+            'user_id': user_id,
+            'product_id': product_id,
+            'quantity': quantity
+        }
+        if quantity <= 1:
             # Добавляем товар в корзину
-            await CartDao.add(session=session_without_commit, values=CartData(**cart_data))
+            await CartDao.add(session=session_with_commit, values=CartData(**cart_data))
             await call.answer("✅ Товар добавлен в корзину!")
-    elif action == "remove":
-        if quantity > 1:
-            quantity -= 1
-            await CartDao.update(
-                session=session_without_commit,
-                filters=CartData(product_id=product_id, user_id=user_id),
-                values=CartData(quantity=quantity)
-            )
-            await call.answer("🔄 Информация о товаре обновлена!")
         else:
-            await CartDao.delete(session=session_without_commit, filters=CartData(product_id=product_id, user_id=user_id))
-            await call.answer("❌ Товар удален!")
-
-    # callback_data = "cart"
+            await CartDao.delete(session=session_with_commit, filters=CartIDUserProduct(product_id=product_id, user_id=user_id))
+            # Добавляем товар в корзину
+            await CartDao.add(session=session_with_commit, values=CartData(**cart_data))
+            await call.answer("🔄 Количество товара изменено, обновите Корзину!", show_alert=True)
+    elif action == "remove":
+        quantity -= 1
+        cart_data = {
+            'user_id': user_id,
+            'product_id': product_id,
+            'quantity': quantity
+        }
+        if quantity < 1:
+            await CartDao.delete(session=session_with_commit,
+                                 filters=CartIDUserProduct(product_id=product_id, user_id=user_id))
+            await call.answer("❌ Товар удален!", show_alert=True)
+        else:
+            await CartDao.delete(session=session_with_commit,
+                                 filters=CartIDUserProduct(product_id=product_id, user_id=user_id))
+            await CartDao.add(session=session_with_commit, values=CartData(**cart_data))
+            await call.answer("🔄 Количество товара изменено, обновите Корзину!", show_alert=True)
 
 
 @catalog_router.callback_query(F.data.startswith("cart"))
 @catalog_router.callback_query(F.data.startswith("refresh_cart"))
 async def cart_command(call: CallbackQuery, session_without_commit: AsyncSession):
     await call.answer("Загрузка корзины...")
-    user_id = int(call.from_user.id)
-    carts = await CartDao.find_all(session=session_without_commit, filters=CartData(user_id=user_id))
-    if not carts:
-        await call.answer("Ваша корзина пуста.")
+    user = await UserDAO.find_one_or_none(session=session_without_commit,
+                                          filters=TelegramIDModel(telegram_id=call.from_user.id))
+    user_id = user.id
+    carts = await CartDao.find_all(session=session_without_commit, filters=CartIDUser(user_id=user_id))
+    if len(carts) == 0:
+        await call.message.answer("Ваша корзина пуста.")
     else:
-        await call.answer(f"🛒 Ваша корзина:\n")
+        await call.message.answer(f"🛒 Ваша корзина:\n")
         total_price = 0
         for cart in carts:
-            id_product = int(cart.product_id)
+            id_product = cart.product_id
             product = await ProductDao.find_one_or_none_by_id(session=session_without_commit, data_id=id_product)
             price = product.price*cart.quantity
             product_text = (
@@ -140,10 +151,12 @@ async def cart_command(call: CallbackQuery, session_without_commit: AsyncSession
 
 
 @catalog_router.callback_query(F.data.startswith('checkout'))
-async def purchase_add(call: CallbackQuery, session_without_commit: AsyncSession):
-    user_id = int(call.from_user.id)
-    carts = await CartDao.find_all(session=session_without_commit, filters=CartData(user_id=user_id))
-    text = []
+async def purchase_add(call: CallbackQuery, session_without_commit: AsyncSession, session_with_commit: AsyncSession):
+    user = await UserDAO.find_one_or_none(session=session_without_commit,
+                                          filters=TelegramIDModel(telegram_id=call.from_user.id))
+    user_id = user.id
+    carts = await CartDao.find_all(session=session_without_commit, filters=CartIDUser(user_id=user_id))
+    text = ''
     total_price = 0
     for cart in carts:
         id_product = int(cart.product_id)
@@ -159,20 +172,20 @@ async def purchase_add(call: CallbackQuery, session_without_commit: AsyncSession
         total_price += price
         text += f"{product.name} - {quantity} шт. × {price}₽ = {quantity * price}₽\n"
         # Добавляем информацию о покупке в базу данных
-        await PurchaseDao.add(session=session_without_commit, values=PurchaseData(**purchase_data))
-        await CartDao.delete(session=session_without_commit, filters=CartData(product_id=id_product, user_id=user_id))
+        await PurchaseDao.add(session=session_with_commit, values=PurchaseData(**purchase_data))
+        await CartDao.delete(session=session_with_commit, filters=CartIDUserProduct(product_id=id_product, user_id=user_id))
     text += f"Итоговая сумма - {total_price} ₽"
 
     # Формируем уведомление администраторам
     for admin_id in settings.ADMIN_IDS:
         try:
             username = call.message.from_user.username
-            user_info = f"@{username} ({call.message.from_user.id})" if username else f"c ID {call.message.from_user.id}"
+            user_info = f"@{user.username}" if username else f"c ID {user_id}"
 
             await bot.send_message(
                 chat_id=admin_id,
                 text=(
-                    f"💲 Пользователь {user_info} оформил заказ:\n "
+                    f"💲 Пользователь {user_info} оформил заказ:\n"
                     f"{text}"
                 )
             )
