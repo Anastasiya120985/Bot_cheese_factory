@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     DB_NAME: str
 
     def get_db_url(self):
+        """
+        Функция получения адреса для поключения к БД
+        :return: URL подключения к базе данных PostgreSQL через aiosqlite
+        """
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 

@@ -1,4 +1,4 @@
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict
 
 from loguru import logger
@@ -16,8 +16,13 @@ class UserDAO(BaseDAO[User]):
 
     @classmethod
     async def get_purchase_statistics(cls, session: AsyncSession, telegram_id: int) -> Optional[Dict[str, int]]:
+        """
+        Асинхроyная функция для получения общего количества покупок и общей суммы покупок для пользователя
+        :param session: асинхронная сессия базы данных
+        :param telegram_id: ИД пользователя в телеграмме
+        :return: общее количество покупок и общая сумма покупок
+        """
         try:
-            # Запрос для получения общего числа покупок и общей суммы
             result = await session.execute(
                 select(
                     func.count(Purchase.id).label('total_purchases'),
@@ -32,18 +37,22 @@ class UserDAO(BaseDAO[User]):
             total_purchases, total_amount = stats
             return {
                 'total_purchases': total_purchases,
-                'total_amount': total_amount or 0  # Обработка случая, когда сумма может быть None
+                'total_amount': total_amount or 0
             }
 
         except SQLAlchemyError as e:
-            # Обработка ошибок при работе с базой данных
             print(f"Ошибка при получении статистики покупок пользователя: {e}")
             return None
 
     @classmethod
     async def get_purchased_products(cls, session: AsyncSession, telegram_id: int) -> Optional[List[Purchase]]:
+        """
+        Асинхроyная функция для получения пользователя с его покупками и связанными продуктами
+        :param session: асинхронная сессия базы данных
+        :param telegram_id: ИД пользователя в телеграмме
+        :return: словарь с покупками пользователь
+        """
         try:
-            # Запрос для получения пользователя с его покупками и связанными продуктами
             result = await session.execute(
                 select(User)
                 .options(
@@ -59,12 +68,17 @@ class UserDAO(BaseDAO[User]):
             return user.purchases
 
         except SQLAlchemyError as e:
-            # Обработка ошибок при работе с базой данных
             print(f"Ошибка при получении информации о покупках пользователя: {e}")
             return None
 
     @classmethod
     async def get_statistics(cls, session: AsyncSession):
+        """
+        Асинхронная функция для сбора статистики новых зарегестрированных в чат-боте пользователей за все время,
+        за сегодня, за неделю и за месяц
+        :param session: асинхронная сессия базы данных
+        :return: статистика по пользователям во временной разбивке
+        """
         try:
             now = datetime.now()
 
@@ -109,7 +123,11 @@ class PurchaseDao(BaseDAO[Purchase]):
 
     @classmethod
     async def get_full_summ(cls, session: AsyncSession) -> int:
-        """Получить общую сумму покупок."""
+        """
+        Асинхронная функция для получения общей суммы покупок для класса Покупки
+        :param session: асинхронная сессия базы данных
+        :return: общая сумма покупок
+        """
         query = select(func.sum(cls.model.price).label('total_price'))
         result = await session.execute(query)
         total_price = result.scalars().one_or_none()
