@@ -1,5 +1,5 @@
 import asyncio
-from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeAllPrivateChats
+from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 from telegram_bot.config import bot, admins, dp
 from telegram_bot.dao.database_middleware import DatabaseMiddlewareWithoutCommit, DatabaseMiddlewareWithCommit
@@ -10,7 +10,6 @@ from telegram_bot.user.catalog_router import catalog_router
 
 # Функция, которая настроит командное меню (дефолтное для всех пользователей)
 async def set_commands():
-    # await bot.set_my_commands(commands=private, scope=BotCommandScopeAllPrivateChats())
     commands = [BotCommand(command='start', description='Старт')]
     await bot.set_my_commands(commands, BotCommandScopeDefault())
 

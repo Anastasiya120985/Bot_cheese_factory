@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from telegram_bot.config import bot, settings
 from telegram_bot.dao.dao import CategoryDao, ProductDao, PurchaseDao, CartDao, UserDAO
 from telegram_bot.user.kbs import catalog_kb, product_kb, purchases_kb, cart_product_kb, cart_kb
-from telegram_bot.user.schemas import ProductCategoryIDModel, PurchaseData, CartData, CartIDUser, TelegramIDModel, CartIDUserProduct, CartQuantity
+from telegram_bot.user.schemas import ProductCategoryIDModel, PurchaseData, CartData, CartIDUser, TelegramIDModel, \
+    CartIDUserProduct
 
 catalog_router = Router()
 

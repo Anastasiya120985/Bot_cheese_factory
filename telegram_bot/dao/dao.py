@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict
-
 from loguru import logger
 from sqlalchemy import select, func, case
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-
 from telegram_bot.dao.base import BaseDAO
 from telegram_bot.dao.models import User, Purchase, Category, Product, Cart
 
@@ -17,10 +15,10 @@ class UserDAO(BaseDAO[User]):
     @classmethod
     async def get_purchase_statistics(cls, session: AsyncSession, telegram_id: int) -> Optional[Dict[str, int]]:
         """
-        Асинхроyная функция для получения общего количества покупок и общей суммы покупок для пользователя
+        Асинхронный метод возвращает общее количество покупок и их сумму для конкретного пользователя по его Telegram ID
         :param session: асинхронная сессия базы данных
-        :param telegram_id: ИД пользователя в телеграмме
-        :return: общее количество покупок и общая сумма покупок
+        :param telegram_id: Telegram ID пользователя
+        :return: общее количество покупок и общая сумма покупок пользователя
         """
         try:
             result = await session.execute(
@@ -47,10 +45,10 @@ class UserDAO(BaseDAO[User]):
     @classmethod
     async def get_purchased_products(cls, session: AsyncSession, telegram_id: int) -> Optional[List[Purchase]]:
         """
-        Асинхроyная функция для получения пользователя с его покупками и связанными продуктами
+        Асинхронный метод возвращает список всех покупок пользователя с детализацией по продуктам
         :param session: асинхронная сессия базы данных
-        :param telegram_id: ИД пользователя в телеграмме
-        :return: словарь с покупками пользователь
+        :param telegram_id: Telegram ID пользователя
+        :return: список с покупками пользователь
         """
         try:
             result = await session.execute(
@@ -74,8 +72,7 @@ class UserDAO(BaseDAO[User]):
     @classmethod
     async def get_statistics(cls, session: AsyncSession):
         """
-        Асинхронная функция для сбора статистики новых зарегестрированных в чат-боте пользователей за все время,
-        за сегодня, за неделю и за месяц
+        Асинхронный метод собирает данные о количестве пользователей, зарегистрированных за различные временные периоды
         :param session: асинхронная сессия базы данных
         :return: статистика по пользователям во временной разбивке
         """
@@ -124,7 +121,7 @@ class PurchaseDao(BaseDAO[Purchase]):
     @classmethod
     async def get_full_summ(cls, session: AsyncSession) -> int:
         """
-        Асинхронная функция для получения общей суммы покупок для класса Покупки
+        Асинхронный метод для подсчета общей суммы всех покупок
         :param session: асинхронная сессия базы данных
         :return: общая сумма покупок
         """

@@ -17,7 +17,12 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def find_one_or_none_by_id(cls, data_id: int, session: AsyncSession):
-        # Найти запись по ID
+        """
+        Асинхронный метод поиска записи по ID
+        :param data_id: ID записи
+        :param session: асинхронная сессия базы данных
+        :return: найденная запись в виде словаря
+        """
         logger.info(f"Поиск {cls.model.__name__} с ID: {data_id}")
         try:
             query = select(cls.model).filter_by(id=data_id)
@@ -34,7 +39,12 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def find_one_or_none(cls, session: AsyncSession, filters: BaseModel):
-        # Найти одну запись по фильтрам
+        """
+        Асинхронный метод поиска одной записи по фильтрам
+        :param session: асинхронная сессия базы данных
+        :param filters: словарь фильтров для поиска
+        :return: найденная запись в виде словаря
+        """
         filter_dict = filters.model_dump(exclude_unset=True)
         logger.info(f"Поиск одной записи {cls.model.__name__} по фильтрам: {filter_dict}")
         try:
@@ -52,7 +62,12 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def find_all(cls, session: AsyncSession, filters: BaseModel | None = None):
-        # Найти все записи по фильтрам
+        """
+        Асинхронный метод поиска всех записей по фильтрам
+        :param session: асинхронная сессия базы данных
+        :param filters: словарь фильтров для поиска
+        :return: найденные записи в виде словаря
+        """
         filter_dict = filters.model_dump(exclude_unset=True) if filters else {}
         logger.info(f"Поиск всех записей {cls.model.__name__} по фильтрам: {filter_dict}")
         try:
@@ -67,7 +82,12 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def add(cls, session: AsyncSession, values: BaseModel):
-        # Добавить одну запись
+        """
+        Асинхронный метод добавление одной записи
+        :param session: асинхронная сессия базы данных
+        :param values: словарь значений для добавления
+        :return: добавление новой записи с указанным словарем значений
+        """
         values_dict = values.model_dump(exclude_unset=True)
         logger.info(f"Добавление записи {cls.model.__name__} с параметрами: {values_dict}")
         new_instance = cls.model(**values_dict)
@@ -83,7 +103,13 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def update(cls, session: AsyncSession, filters: BaseModel, values: BaseModel):
-        # Изменить записи по фильтру
+        """
+        Асинхронный метод изменение записи по фильтру
+        :param session: асинхронная сессия базы данных
+        :param filters: словарь фильтров для поиска
+        :param values: словарь значений для изменения
+        :return: изменение значений в найденной по фильтрам записи
+        """
         filter_dict = filters.model_dump(exclude_unset=True)
         values_dict = values.model_dump(exclude_unset=True)
         logger.info(f"Изменение записей {cls.model.__name__} по фильтру: {filter_dict}, с параметрами: {values_dict}")
@@ -105,7 +131,12 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def delete(cls, session: AsyncSession, filters: BaseModel):
-        # Удалить записи по фильтру
+        """
+        Асинхронный метод удаления записей по фильтру
+        :param session: асинхронная сессия базы данных
+        :param filters: словарь фильтров для поиска
+        :return: удаление найденной записи
+        """
         filter_dict = filters.model_dump(exclude_unset=True)
         logger.info(f"Удаление записей {cls.model.__name__} по фильтру: {filter_dict}")
         if not filter_dict:
@@ -125,7 +156,12 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def count(cls, session: AsyncSession, filters: BaseModel | None = None):
-        # Подсчитать количество записей
+        """
+        Асинхронный метод подсчета количества записей
+        :param session: асинхронная сессия базы данных
+        :param filters: словарь фильтров для поиска
+        :return: количество запесей по указанному фильтру
+        """
         filter_dict = filters.model_dump(exclude_unset=True) if filters else {}
         logger.info(f"Подсчет количества записей {cls.model.__name__} по фильтру: {filter_dict}")
         try:

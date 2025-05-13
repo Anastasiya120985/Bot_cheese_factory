@@ -23,11 +23,17 @@ class Base(AsyncAttrs, DeclarativeBase):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
-    # Автоматическое определение имени таблицы
     @declared_attr.directive
     def __tablename__(cls) -> str:
+        """
+        Функция для автоматического определения имени таблицы
+        :return: имя таблицы
+        """
         return cls.__name__.lower() + 's'
 
-    # Метод для преобразования объекта в словарь
     def to_dict(self) -> dict:
+        """
+        Метод для преобразования объекта в словарь
+        :return: словарь, полученный из таблицы
+        """
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
