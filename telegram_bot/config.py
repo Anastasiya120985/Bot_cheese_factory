@@ -16,8 +16,7 @@ class Settings(BaseSettings):
     # model_config = SettingsConfigDict(
     #     env_file=os.path.join(parent_dir, ".env"), env_file_encoding="utf-8"
     # )
-    # BOT_TOKEN: str
-    # ADMIN_IDS: List[int]
+    # ADMIN_IDS
     # DB_USER: str
     # DB_PASSWORD: str
     # DB_HOST: str
@@ -33,13 +32,13 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(token='7837104302:AAEU5cwKC9Pn_ANRnK0SCLZM7rt7KGy5tvM', default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
-admins = ADMIN_IDS
+admins = [1056710517]
 
 log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.txt")
 logger.add(log_file_path, format=settings.FORMAT_LOG, level="INFO", rotation=settings.LOG_ROTATION)
-database_url = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:8000/{DB_NAME}"
+# database_url = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:8000/{DB_NAME}"
 
 
 

@@ -1,7 +1,7 @@
 from typing import List
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from telegram_bot.config import settings
+from telegram_bot.config import admins
 from telegram_bot.dao.models import Category
 
 
@@ -11,7 +11,7 @@ def main_user_kb(user_id: int) -> InlineKeyboardMarkup:
     kb.button(text="🛍 По категориям", callback_data="catalog")
     kb.button(text="🛒 Корзина", callback_data="cart")
     kb.button(text="ℹ️ О нас", callback_data="about")
-    if user_id in settings.ADMIN_IDS:
+    if user_id in admins:
         kb.button(text="⚙️ Админ панель", callback_data="admin_panel")
     kb.adjust(2, 2, 1)
     return kb.as_markup()

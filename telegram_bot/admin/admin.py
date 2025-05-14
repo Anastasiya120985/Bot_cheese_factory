@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
-from telegram_bot.config import settings, bot
+from telegram_bot.config import admins, bot
 from telegram_bot.dao.dao import UserDAO, ProductDao, CategoryDao, PurchaseDao
 from telegram_bot.admin.kbs import admin_kb, admin_kb_back, product_management_kb, cancel_kb_inline, catalog_admin_kb, \
     admin_send_file_kb, admin_confirm_kb, dell_change_product_kb, change_product_kb
@@ -25,7 +25,7 @@ class AddProduct(StatesGroup):
 
 
 # Функция, которая будет выполняться при входе в админ панель
-@admin_router.callback_query(F.data == "admin_panel", F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data == "admin_panel", F.from_user.id.in_(admins))
 async def start_admin(call: CallbackQuery):
     await call.answer('Доступ в админ-панель разрешен!')
     await call.message.edit_text(
@@ -35,7 +35,7 @@ async def start_admin(call: CallbackQuery):
 
 
 # Метод, который будет возвращать статистику по боту
-@admin_router.callback_query(F.data == 'statistic', F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data == 'statistic', F.from_user.id.in_(admins))
 async def admin_statistic(call: CallbackQuery, session_without_commit: AsyncSession):
     await call.answer('Запрос на получение статистики...')
     await call.answer('📊 Собираем статистику...')
@@ -57,7 +57,7 @@ async def admin_statistic(call: CallbackQuery, session_without_commit: AsyncSess
     )
 
 
-@admin_router.callback_query(F.data == 'process_products', F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data == 'process_products', F.from_user.id.in_(admins))
 async def admin_process_products(call: CallbackQuery, session_without_commit: AsyncSession):
     await call.answer('Режим управления товарами')
     all_products_count = await ProductDao.count(session=session_without_commit)
@@ -67,7 +67,7 @@ async def admin_process_products(call: CallbackQuery, session_without_commit: As
     )
 
 
-@admin_router.callback_query(F.data == 'delete_product', F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data == 'delete_product', F.from_user.id.in_(admins))
 async def admin_process_start_dell_change(call: CallbackQuery, session_without_commit: AsyncSession):
     await call.answer('Режим удаления товаров')
     all_products = await ProductDao.find_all(session=session_without_commit)
@@ -88,7 +88,7 @@ async def admin_process_start_dell_change(call: CallbackQuery, session_without_c
             await call.message.answer(text=product_text, reply_markup=dell_change_product_kb(product_data.id))
 
 
-@admin_router.callback_query(F.data.startswith('dell_'), F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data.startswith('dell_'), F.from_user.id.in_(admins))
 async def admin_process_start_dell(call: CallbackQuery, session_with_commit: AsyncSession):
     product_id = int(call.data.split('_')[-1])
     await ProductDao.delete(session=session_with_commit, filters=ProductIDModel(id=product_id))
@@ -96,7 +96,7 @@ async def admin_process_start_dell(call: CallbackQuery, session_with_commit: Asy
     await call.message.delete()
 
 
-@admin_router.callback_query(F.data.startswith('change_'), F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data.startswith('change_'), F.from_user.id.in_(admins))
 async def admin_process_start_change(call: CallbackQuery, session_with_commit: AsyncSession):
     product_id = int(call.data.split('_')[-1])
 
@@ -120,7 +120,7 @@ async def admin_process_start_change(call: CallbackQuery, session_with_commit: A
 
 
 #
-@admin_router.callback_query(F.data == "cancel", F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data == "cancel", F.from_user.id.in_(admins))
 async def admin_process_cancel(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await call.answer('Отмена сценария добавления товара')
@@ -131,7 +131,7 @@ async def admin_process_cancel(call: CallbackQuery, state: FSMContext):
     )
 
 
-@admin_router.callback_query(F.data == 'add_product', F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data == 'add_product', F.from_user.id.in_(admins))
 async def admin_process_add_product(call: CallbackQuery, state: FSMContext):
     await call.answer('Запущен сценарий добавления товара.')
     await call.message.delete()
@@ -140,7 +140,7 @@ async def admin_process_add_product(call: CallbackQuery, state: FSMContext):
     await state.set_state(AddProduct.name)
 
 
-@admin_router.message(F.text, F.from_user.id.in_(settings.ADMIN_IDS), AddProduct.name)
+@admin_router.message(F.text, F.from_user.id.in_(admins), AddProduct.name)
 async def admin_process_name(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
     await process_dell_text_msg(message, state)
@@ -149,7 +149,7 @@ async def admin_process_name(message: Message, state: FSMContext):
     await state.set_state(AddProduct.description)
 
 
-@admin_router.message(F.text, F.from_user.id.in_(settings.ADMIN_IDS), AddProduct.description)
+@admin_router.message(F.text, F.from_user.id.in_(admins), AddProduct.description)
 async def admin_process_description(message: Message, state: FSMContext, session_without_commit: AsyncSession):
     await state.update_data(description=message.html_text)
     await process_dell_text_msg(message, state)
@@ -160,7 +160,7 @@ async def admin_process_description(message: Message, state: FSMContext, session
 
 
 @admin_router.callback_query(F.data.startswith("add_category_"),
-                             F.from_user.id.in_(settings.ADMIN_IDS),
+                             F.from_user.id.in_(admins),
                              AddProduct.category_id)
 async def admin_process_category(call: CallbackQuery, state: FSMContext):
     category_id = int(call.data.split("_")[-1])
@@ -171,7 +171,7 @@ async def admin_process_category(call: CallbackQuery, state: FSMContext):
     await state.set_state(AddProduct.price)
 
 
-@admin_router.message(F.text, F.from_user.id.in_(settings.ADMIN_IDS), AddProduct.price)
+@admin_router.message(F.text, F.from_user.id.in_(admins), AddProduct.price)
 async def admin_process_price(message: Message, state: FSMContext):
     try:
         price = int(message.text)
@@ -188,7 +188,7 @@ async def admin_process_price(message: Message, state: FSMContext):
         return
 
 
-@admin_router.callback_query(F.data == "without_file", F.from_user.id.in_(settings.ADMIN_IDS), AddProduct.image)
+@admin_router.callback_query(F.data == "without_file", F.from_user.id.in_(admins), AddProduct.image)
 async def admin_process_without_file(call: CallbackQuery, state: FSMContext):
     await state.update_data(image=None)
     await call.answer('Файл не выбран.')
@@ -198,7 +198,7 @@ async def admin_process_without_file(call: CallbackQuery, state: FSMContext):
     await state.set_state(AddProduct.min_packing)
 
 
-@admin_router.message(F.text, F.from_user.id.in_(settings.ADMIN_IDS), AddProduct.image)
+@admin_router.message(F.text, F.from_user.id.in_(admins), AddProduct.image)
 async def admin_process_without_file(message: Message, state: FSMContext):
     await state.update_data(image=message.text)
     await process_dell_text_msg(message, state)
@@ -208,7 +208,7 @@ async def admin_process_without_file(message: Message, state: FSMContext):
     await state.set_state(AddProduct.min_packing)
 
 
-@admin_router.message(F.text, F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.message(F.text, F.from_user.id.in_(admins))
 async def admin_process_hidden_content(message: Message, state: FSMContext, session_without_commit: AsyncSession):
     await state.update_data(min_packing=message.text)
 
@@ -234,7 +234,7 @@ async def admin_process_hidden_content(message: Message, state: FSMContext, sess
     await state.set_state(AddProduct.confirm_add)
 
 
-@admin_router.callback_query(F.data == "confirm_add", F.from_user.id.in_(settings.ADMIN_IDS))
+@admin_router.callback_query(F.data == "confirm_add", F.from_user.id.in_(admins))
 async def admin_process_confirm_add(call: CallbackQuery, state: FSMContext, session_with_commit: AsyncSession):
     await call.answer('Приступаю к сохранению файла!')
     product_data = await state.get_data()
