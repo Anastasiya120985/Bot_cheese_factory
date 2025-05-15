@@ -9,6 +9,7 @@ from telegram_bot.dao.base import BaseDAO
 from telegram_bot.dao.models import User, Purchase, Category, Product, Cart
 
 
+
 class UserDAO(BaseDAO[User]):
     model = User
 
