@@ -1,11 +1,12 @@
 from datetime import datetime
-# from telegram_bot.config import database_url
+from telegram_bot.config import database_url
 from sqlalchemy import func, Integer
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, declared_attr
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
-DATABASE_URL = f"postgresql+asyncpg://postgres:Fotefi25+@localhost:5432/postgres"
-# DATABASE_URL = 'amvera-nastena-555-cnpg-sheese-factory-rw'
+# DATABASE_URL = f"postgresql+asyncpg://postgres:Fotefi25+@localhost:5432/postgres"
+DATABASE_URL = database_url
+
 # Создание асинхронного движка для подключения к БД
 engine = create_async_engine(url=DATABASE_URL)
 
