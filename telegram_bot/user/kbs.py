@@ -29,7 +29,7 @@ def catalog_kb(catalog_data: List[Category]) -> InlineKeyboardMarkup:
 
 def product_kb(product_id) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="💸 Добавить в Корзину", callback_data=f"add_{product_id}")
+    kb.button(text="💸 Добавить в Корзину", callback_data=f"add_cart_{product_id}")
     kb.button(text="🏠 На Главную", callback_data="home")
     kb.button(text="🛒 Корзина", callback_data="cart")
     kb.adjust(1, 2)
@@ -38,8 +38,8 @@ def product_kb(product_id) -> InlineKeyboardMarkup:
 
 def cart_product_kb(product_id) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="➕", callback_data=f"add_{product_id}")
-    kb.button(text="➖", callback_data=f"remove_{product_id}")
+    kb.button(text="➕", callback_data=f"add_cart_{product_id}")
+    kb.button(text="➖", callback_data=f"remove_cart_{product_id}")
     kb.adjust(2)
     return kb.as_markup()
 

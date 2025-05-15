@@ -67,10 +67,10 @@ async def page_products(call: CallbackQuery, session_without_commit: AsyncSessio
         await call.answer("В наличие нет товаров.")
 
 
-@catalog_router.callback_query(F.data.startswith("add_") | F.data.startswith("remove_"))
+@catalog_router.callback_query(F.data.startswith("add_cart_") | F.data.startswith("remove_cart_"))
 async def update_cart_handler(call: CallbackQuery, session_without_commit: AsyncSession, session_with_commit: AsyncSession):
-    action, product_id = call.data.split("_")
-    product_id = int(product_id)
+    action = call.data.split("_")[-0]
+    product_id = int(call.data.split("_")[-1])
     user = await UserDAO.find_one_or_none(
         session=session_without_commit,
         filters=TelegramIDModel(telegram_id=call.from_user.id)
